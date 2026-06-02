@@ -3,16 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Mobile-first client-server app to hide little notes inside photos.",
+  "description": "A mobile-first static web app for hiding short notes inside photos.",
   "scripts": {
-    "dev": "concurrently -n server,client -c green,cyan \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
-    "install:all": "npm --prefix server install && npm --prefix client install && npm install",
-    "test:server": "npm --prefix server test",
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client install && npm --prefix client run build",
+    "preview": "npm --prefix client run preview",
+    "install:all": "npm --prefix client install && npm install",
+    "test:codec": "node --test test/*.test.js",
     "test:e2e": "playwright test",
-    "test": "npm run test:server && npm run test:e2e"
+    "test": "npm run test:codec && npm run test:e2e"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.1",
-    "concurrently": "^9.1.0"
+    "@playwright/test": "^1.49.1"
   }
 }

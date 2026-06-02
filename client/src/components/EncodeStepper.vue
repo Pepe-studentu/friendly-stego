@@ -90,7 +90,7 @@ function finish() {
       <textarea
         v-model="message"
         rows="6"
-        placeholder="something sweet…"
+        placeholder="Your message"
         data-testid="message-input"
         class="w-full resize-none rounded-2xl border-2 border-stego-200 bg-white p-4 text-base text-stone-700 outline-none focus:border-stego-400"
       ></textarea>
@@ -121,7 +121,7 @@ function finish() {
 
     <!-- step: download -->
     <div v-else class="flex flex-col items-center gap-4 text-center">
-      <p class="text-lg font-extrabold text-stego-700">Your secret photo is ready 🎉</p>
+      <p class="text-lg font-extrabold text-stego-700">Photo ready</p>
       <button
         class="w-full rounded-full bg-stego-500 px-6 py-3 text-base font-bold text-white shadow-sm transition active:scale-[0.98]"
         data-testid="download-button"
@@ -130,8 +130,8 @@ function finish() {
         Download photo
       </button>
       <p class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
-        💡 Send it as a <strong>file / document</strong>, not as a chat photo — chat apps
-        re-compress photos and would erase the hidden note.
+        Send it as a <strong>file or document</strong>, not as a chat photo. Chat apps
+        re-compress photos, which erases the hidden note.
       </p>
       <button class="text-sm font-bold text-stego-600 underline" data-testid="finish-button" @click="finish">
         Done — show me the photo

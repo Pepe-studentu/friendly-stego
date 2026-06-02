@@ -1,33 +1,51 @@
 # Stego: little hidden notes
 
 A mobile-first web app for hiding a short text note inside a photo, and revealing
-it again. 
+it again.
 
 ## How it works
 - **Encode:** upload a photo → write a note → download a PNG with the note hidden in it.
 - **Decode:** open a photo in the app → tap it → the card flips to reveal the note.
 
 The note is hidden with fragile **LSB** steganography and the result is always a lossless
-**PNG**. 
+**PNG**. Everything runs in the browser — the app is a static site with no backend, and
+no photo or note ever leaves the device.
 
 ## Layout
-- `server/` — Node + Express. Stateless: processes images in memory, stores nothing.
-- `client/` — Vue 3 + Vite + Tailwind. Single central image card and a short encode flow.
+- `client/` — Vue 3 + Vite + Tailwind. The whole app.
+  - `src/codec/` — the steganography core (`payload.js`, `lsb.js`), pure JS so it runs in
+    the browser and in Node tests. The codec sits behind a small interface, so a more
+    robust method could replace LSB later without touching the UI.
+  - `src/services/api.js` — runs the codec on a `<canvas>` (encode/decode).
+- `test/` — behavioral round-trip test for the codec (`node --test`).
 - `e2e/` — one Playwright happy-path test through the real UI.
 
 ## Develop
 Node is provided via nvm; run commands in an nvm-sourced shell.
 
 ```bash
-npm run install:all   # install server, client, and root deps
-npm run dev           # server on :3001, client on :5173 (proxies /api)
+npm run install:all   # install client + root deps
+npm run dev           # client on :5173 (also exposed on your LAN for phone testing)
 ```
 
 ## Test
 ```bash
-npm run test:server   # behavioral encode/decode round-trip suite
-npm run test:e2e      # Playwright happy path (boots both servers)
+npm run test:codec    # behavioral encode/decode round-trip suite
+npm run test:e2e      # Playwright happy path (boots the dev server)
 npm test              # both
 ```
 
 First time only, install the browser: `npx playwright install chromium`.
+
+## Deploy (free static hosting)
+The app builds to plain static files, so any static host serves it for free.
+
+```bash
+npm run build         # outputs client/dist/
+```
+
+- **Build command:** `npm run build`
+- **Publish / output directory:** `client/dist`
+
+Connect the repo to a host like Cloudflare Pages or Netlify with those two settings and
+every push deploys automatically to a public link.
