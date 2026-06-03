@@ -4,20 +4,24 @@ A mobile-first web app for hiding a short text note inside a photo, and revealin
 it again.
 
 ## How it works
-- **Encode:** upload a photo → write a note → download a PNG with the note hidden in it.
+- **Encode:** upload a photo → write a note → download the photo with the note hidden in it.
 - **Decode:** open a photo in the app → tap it → the card flips to reveal the note.
 
-Two hiding methods are chosen automatically by note length:
+Two hiding methods are chosen automatically by note length, and the output format follows
+the method:
 - **Robust (DCT/QIM):** survives chat-app recompression (e.g. WhatsApp), so the photo can
-  be sent as a normal photo. Used whenever the note fits.
+  be sent as a normal photo. Used whenever the note fits. Output is a **high-quality JPEG**,
+  roughly the size of the original — small enough to send as a chat photo.
 - **File (LSB):** perfect and high-capacity, but must be sent as a file/document. Used for
-  longer notes that don't fit the robust method.
+  longer notes that don't fit the robust method. Output is a lossless **PNG** (LSB needs
+  exact pixels).
 
-Output is always a lossless **PNG**. Everything runs in the browser — the app is a static
-site with no backend, and no photo or note ever leaves the device.
+Everything runs in the browser — the app is a static site with no backend, and no photo or
+note ever leaves the device.
 
-To verify robustness against real WhatsApp compression, encode a note, send the PNG through
-WhatsApp, save the received `.jpg`, and run `npm run decode:sample -- path/to/received.jpg`.
+To verify robustness against real WhatsApp compression, encode a note, send the downloaded
+photo through WhatsApp, save the received `.jpg`, and run
+`npm run decode:sample -- path/to/received.jpg`.
 
 ## Layout
 - `client/` — Vue 3 + Vite + Tailwind. The whole app.

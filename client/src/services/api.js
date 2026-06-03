@@ -35,15 +35,20 @@ async function fileToImageData(file, flatten = false) {
   return { imageData: ctx.getImageData(0, 0, canvas.width, canvas.height), ctx, canvas };
 }
 
-function canvasToPngBlob(canvas) {
+function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not create image.'))), 'image/png');
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not create image.'))), type, quality);
   });
 }
 
+// Robust mode is built to survive JPEG, so we can ship a high-quality JPEG —
+// roughly the size of the original photo, small enough for a chat photo. File
+// (LSB) mode hides data in exact pixel bits, so it must stay lossless PNG.
+const ROBUST_JPEG_QUALITY = 0.95;
+
 /**
  * Hide a message inside an image.
- * @returns {Promise<{ blob: Blob, mode: 'robust' | 'file' }>}
+ * @returns {Promise<{ blob: Blob, mode: 'robust' | 'file', ext: 'jpg' | 'png' }>}
  */
 export async function encode(file, message) {
   const { imageData, ctx, canvas } = await fileToImageData(file, true);
@@ -66,7 +71,11 @@ export async function encode(file, message) {
   }
 
   ctx.putImageData(imageData, 0, 0);
-  return { blob: await canvasToPngBlob(canvas), mode };
+  const blob =
+    mode === 'robust'
+      ? await canvasToBlob(canvas, 'image/jpeg', ROBUST_JPEG_QUALITY)
+      : await canvasToBlob(canvas, 'image/png');
+  return { blob, mode, ext: mode === 'robust' ? 'jpg' : 'png' };
 }
 
 /**

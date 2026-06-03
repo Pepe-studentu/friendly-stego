@@ -19,6 +19,7 @@ const error = ref('');
 const encodedBlob = ref(null);
 const encodedUrl = ref('');
 const encodedMode = ref('robust'); // which codec actually got used
+const encodedExt = ref('jpg'); // file extension matching the chosen codec
 
 const robustMax = computed(() => maxRobustBytes(props.width, props.height));
 const fileMax = computed(() => maxFileBytes(props.width, props.height));
@@ -37,9 +38,10 @@ async function hideIt() {
   busy.value = true;
   error.value = '';
   try {
-    const { blob, mode } = await encode(props.imageFile, message.value);
+    const { blob, mode, ext } = await encode(props.imageFile, message.value);
     encodedBlob.value = blob;
     encodedMode.value = mode;
+    encodedExt.value = ext;
     encodedUrl.value = URL.createObjectURL(blob);
     step.value = 'download';
   } catch (e) {
@@ -52,7 +54,7 @@ async function hideIt() {
 function download() {
   const a = document.createElement('a');
   a.href = encodedUrl.value;
-  a.download = 'encoded.png';
+  a.download = `encoded.${encodedExt.value}`;
   document.body.appendChild(a);
   a.click();
   a.remove();

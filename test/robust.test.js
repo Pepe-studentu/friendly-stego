@@ -24,16 +24,36 @@ function photoLike(width, height) {
   return px;
 }
 
+/** JPEG encode/decode round trip at a given quality, returning RGBA pixels. */
+function jpegRoundTrip(px, width, height, quality) {
+  const enc = jpeg.encode({ data: px, width, height }, quality);
+  return jpeg.decode(enc.data, { formatAsRGBA: true }).data;
+}
+
 /** Embed, JPEG round-trip at the given quality, then extract. */
 function throughJpeg(width, height, message, quality) {
   const px = photoLike(width, height);
   const framed = frame(TYPE.TEXT, new TextEncoder().encode(message));
   dct.embed(px, { width, height }, framed);
 
-  const enc = jpeg.encode({ data: px, width, height }, quality);
-  const dec = jpeg.decode(enc.data, { formatAsRGBA: true });
+  const out = jpegRoundTrip(px, width, height, quality);
+  const result = dct.extract(out, { width, height });
+  return result ? new TextDecoder().decode(result.data) : null;
+}
 
-  const result = dct.extract(dec.data, { width, height });
+/**
+ * The real production path: we now ship the robust photo as a high-quality JPEG
+ * (~q95), and WhatsApp then recompresses it (~q75-85). So the note must survive
+ * TWO JPEG generations, not one.
+ */
+function throughDoubleJpeg(width, height, message, ourQuality, whatsappQuality) {
+  const px = photoLike(width, height);
+  const framed = frame(TYPE.TEXT, new TextEncoder().encode(message));
+  dct.embed(px, { width, height }, framed);
+
+  const ours = jpegRoundTrip(px, width, height, ourQuality);
+  const theirs = jpegRoundTrip(ours, width, height, whatsappQuality);
+  const result = dct.extract(theirs, { width, height });
   return result ? new TextDecoder().decode(result.data) : null;
 }
 
@@ -44,6 +64,15 @@ test('survives JPEG recompression across a range of qualities', () => {
   const height = 512;
   for (const q of [60, 70, 75, 80, 85, 90]) {
     assert.equal(throughJpeg(width, height, note, q), note, `failed at JPEG quality ${q}`);
+  }
+});
+
+test('survives our JPEG output followed by WhatsApp recompression (double JPEG)', () => {
+  const width = 512;
+  const height = 512;
+  // our output is ~q95; WhatsApp lands roughly q75-85
+  for (const wq of [75, 80, 85]) {
+    assert.equal(throughDoubleJpeg(width, height, note, 95, wq), note, `failed at WhatsApp quality ${wq}`);
   }
 });
 

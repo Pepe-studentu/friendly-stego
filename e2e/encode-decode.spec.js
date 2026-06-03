@@ -30,7 +30,8 @@ test('hide a note, download it, re-open it, and read it back', async ({ page }) 
   const downloadButton = page.getByTestId('download-button');
   await expect(downloadButton).toBeVisible();
   const [download] = await Promise.all([page.waitForEvent('download'), downloadButton.click()]);
-  const savedPath = path.join(os.tmpdir(), `e2e-${Date.now()}.png`);
+  // robust mode ships a JPEG; suggestedFilename reflects the real extension
+  const savedPath = path.join(os.tmpdir(), download.suggestedFilename() || `e2e-${Date.now()}.jpg`);
   await download.saveAs(savedPath);
 
   // start fresh and re-upload the downloaded file — a true round trip
