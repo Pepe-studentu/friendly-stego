@@ -23,6 +23,9 @@ test('hide a note, download it, re-open it, and read it back', async ({ page }) 
   await page.getByTestId('message-input').fill(secret);
   await page.getByTestId('hide-button').click();
 
+  // a short note should use the robust (send-as-a-normal-photo) path
+  await expect(page.getByText('normal photo')).toBeVisible();
+
   // download the encoded photo to a real file
   const downloadButton = page.getByTestId('download-button');
   await expect(downloadButton).toBeVisible();

@@ -10,10 +10,12 @@
     "preview": "npm --prefix client run preview",
     "install:all": "npm --prefix client install && npm install",
     "test:codec": "node --test test/*.test.js",
+    "decode:sample": "node tools/decode-sample.js",
     "test:e2e": "playwright test",
     "test": "npm run test:codec && npm run test:e2e"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.1"
+    "@playwright/test": "^1.49.1",
+    "jpeg-js": "^0.4.4"
   }
 }

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { encode } from '../services/api.js';
+import { encode, maxRobustBytes, maxFileBytes } from '../services/api.js';
 
 // Walks the user through hiding a message: write -> download. Step 1 (photo
 // uploaded) is already done by the time we get here and is shown as complete.
@@ -12,30 +12,35 @@ const props = defineProps({
 
 const emit = defineEmits(['done', 'cancel']);
 
-const HEADER_BYTES = 9; // must match server payload header size
-
 const step = ref('write'); // 'write' | 'download'
 const message = ref('');
 const busy = ref(false);
 const error = ref('');
 const encodedBlob = ref(null);
 const encodedUrl = ref('');
+const encodedMode = ref('robust'); // which codec actually got used
 
-const capacity = computed(() => {
-  const total = Math.floor((props.width * props.height * 3) / 8) - HEADER_BYTES;
-  return Math.max(0, total);
-});
+const robustMax = computed(() => maxRobustBytes(props.width, props.height));
+const fileMax = computed(() => maxFileBytes(props.width, props.height));
 const used = computed(() => new TextEncoder().encode(message.value).length);
-const remaining = computed(() => capacity.value - used.value);
-const overflowing = computed(() => remaining.value < 0);
+const overflowing = computed(() => used.value > fileMax.value);
+
+// Predict the mode live so the hint matches what encode() will choose.
+const predictedMode = computed(() => {
+  if (used.value <= robustMax.value) return 'robust';
+  if (used.value <= fileMax.value) return 'file';
+  return 'over';
+});
 
 async function hideIt() {
   if (!message.value.trim() || overflowing.value) return;
   busy.value = true;
   error.value = '';
   try {
-    encodedBlob.value = await encode(props.imageFile, message.value);
-    encodedUrl.value = URL.createObjectURL(encodedBlob.value);
+    const { blob, mode } = await encode(props.imageFile, message.value);
+    encodedBlob.value = blob;
+    encodedMode.value = mode;
+    encodedUrl.value = URL.createObjectURL(blob);
     step.value = 'download';
   } catch (e) {
     error.value = e.message;
@@ -94,9 +99,17 @@ function finish() {
         data-testid="message-input"
         class="w-full resize-none rounded-2xl border-2 border-stego-200 bg-white p-4 text-base text-stone-700 outline-none focus:border-stego-400"
       ></textarea>
-      <p class="text-right text-xs" :class="overflowing ? 'font-bold text-red-500' : 'text-stone-400'">
-        <span v-if="overflowing">{{ -remaining }} characters too many for this photo</span>
-        <span v-else>room for ~{{ remaining }} more bytes</span>
+      <p
+        class="text-xs"
+        :class="{
+          'font-bold text-red-500': predictedMode === 'over',
+          'text-stego-600': predictedMode === 'robust',
+          'text-amber-600': predictedMode === 'file',
+        }"
+      >
+        <span v-if="predictedMode === 'robust'">This note will survive sending as a normal photo.</span>
+        <span v-else-if="predictedMode === 'file'">Too long to survive compression — this one must be sent as a file.</span>
+        <span v-else>{{ used - fileMax }} bytes too many for this photo.</span>
       </p>
 
       <p v-if="error" class="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600">{{ error }}</p>
@@ -129,9 +142,13 @@ function finish() {
       >
         Download photo
       </button>
-      <p class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
-        Send it as a <strong>file or document</strong>, not as a chat photo. Chat apps
-        re-compress photos, which erases the hidden note.
+      <p v-if="encodedMode === 'robust'" class="rounded-2xl bg-stego-50 px-4 py-3 text-sm text-stego-700">
+        You can send this as a <strong>normal photo</strong> — the note is made to survive
+        chat-app compression.
+      </p>
+      <p v-else class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        Send it as a <strong>file or document</strong>, not as a chat photo. This note was
+        too long for the compression-proof method, so a chat photo would erase it.
       </p>
       <button class="text-sm font-bold text-stego-600 underline" data-testid="finish-button" @click="finish">
         Done — show me the photo

@@ -7,9 +7,17 @@ it again.
 - **Encode:** upload a photo → write a note → download a PNG with the note hidden in it.
 - **Decode:** open a photo in the app → tap it → the card flips to reveal the note.
 
-The note is hidden with fragile **LSB** steganography and the result is always a lossless
-**PNG**. Everything runs in the browser — the app is a static site with no backend, and
-no photo or note ever leaves the device.
+Two hiding methods are chosen automatically by note length:
+- **Robust (DCT/QIM):** survives chat-app recompression (e.g. WhatsApp), so the photo can
+  be sent as a normal photo. Used whenever the note fits.
+- **File (LSB):** perfect and high-capacity, but must be sent as a file/document. Used for
+  longer notes that don't fit the robust method.
+
+Output is always a lossless **PNG**. Everything runs in the browser — the app is a static
+site with no backend, and no photo or note ever leaves the device.
+
+To verify robustness against real WhatsApp compression, encode a note, send the PNG through
+WhatsApp, save the received `.jpg`, and run `npm run decode:sample -- path/to/received.jpg`.
 
 ## Layout
 - `client/` — Vue 3 + Vite + Tailwind. The whole app.

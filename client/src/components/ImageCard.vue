@@ -41,7 +41,7 @@ function toggle() {
         <!-- front: the photo in its uniform white frame; the image defines the
              card size, so its natural aspect ratio is preserved (no cropping) -->
         <div class="backface-hidden">
-          <div class="rounded-2xl bg-white p-3 shadow-polaroid">
+          <div class="rounded-none bg-white p-3 shadow-polaroid">
             <img
               :src="src"
               alt="your photo"
